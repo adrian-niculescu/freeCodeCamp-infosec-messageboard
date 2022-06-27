@@ -13,7 +13,7 @@ const {
 
 module.exports = function (app) {
   
-  async function postBoard(req, res) {
+  async function postThread(req, res) {
     try {
       const { text, delete_password } = req.body;
       let board = req.body.board;
@@ -21,7 +21,7 @@ module.exports = function (app) {
         board = req.params.board;
       }
       console.log(`POST New thread for boardName: ${board} text: ${text}`);
-      const response = await processNewBoardPostRequest(text, board, delete_password);
+      await processNewBoardPostRequest(text, board, delete_password);
       res.redirect(`/b/${board}/`);
     } catch(err) {
       console.error(`Error saving a new post: ${err}`);
@@ -29,7 +29,7 @@ module.exports = function (app) {
     }
   }
 
-  async function getBoard(req, res) {
+  async function getThread(req, res) {
     try {
       const boardName = req.params.board;
       console.log(`GET threads for board: ${boardName}`);
@@ -45,7 +45,7 @@ module.exports = function (app) {
     }
   }
 
-  async function putBoard(req, res) {
+  async function putThread(req, res) {
     try {
       const boardName = req.params.board;
       const { report_id } = req.body;
@@ -62,7 +62,7 @@ module.exports = function (app) {
     }
   }
   
-  async function deleteBoard (req, res) {
+  async function deleteThread (req, res) {
     try {
       const { thread_id, delete_password } = req.body;
       const boardName = req.params.board;
@@ -86,19 +86,19 @@ module.exports = function (app) {
   }
 
   app.route('/api/threads/:board')
-  .post(postBoard)
-  .get(getBoard)
-  .put(putBoard)
-  .delete(deleteBoard);
+  .post(postThread)
+  .get(getThread)
+  .put(putThread)
+  .delete(deleteThread);
 
+  /* Add support for the same route, but with an ending "/" */
   app.route('/api/threads/:board/')
-  .post(postBoard)
-  .get(getBoard)
-  .put(putBoard)
-  .delete(deleteBoard);
+  .post(postThread)
+  .get(getThread)
+  .put(putThread)
+  .delete(deleteThread);
     
-
-  async function postReplies(req, res) {
+  async function postReply(req, res) {
     try {
       const { thread_id, text, delete_password } = req.body;
       const board = req.params.board;
@@ -138,7 +138,7 @@ module.exports = function (app) {
     }
   }
 
-  async function putReplies(req, res) {
+  async function putReply(req, res) {
     try {
       const { thread_id, reply_id } = req.body;
       const boardName = req.params.board;
@@ -155,8 +155,7 @@ module.exports = function (app) {
     }
   }
 
-
-  async function deleteReplies(req, res) {
+  async function deleteReply(req, res) {
     try {
       const { thread_id, reply_id, delete_password } = req.body;
       const boardName = req.params.board;
@@ -180,15 +179,15 @@ module.exports = function (app) {
   }
 
   app.route('/api/replies/:board')
-  .post(postReplies)
+  .post(postReply)
   .get(getReplies)
-  .put(putReplies)
-  .delete(deleteReplies);
+  .put(putReply)
+  .delete(deleteReply);
 
+  /* Add support for the same route, but with an ending "/" */
   app.route('/api/replies/:board/')
-  .post(postReplies)
+  .post(postReply)
   .get(getReplies)
-  .put(putReplies)
-  .delete(deleteReplies);
-
+  .put(putReply)
+  .delete(deleteReply);
 };
