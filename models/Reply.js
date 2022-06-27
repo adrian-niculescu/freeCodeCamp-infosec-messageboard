@@ -13,15 +13,5 @@ const ReplySchema = new Schema({
 
 const Reply = mongoose.model("Reply", ReplySchema);
 
-/**
- * @typedef Reply
- * @property {string} text
- * @property {string} delete_password
- * @property {boolean} reported
- * @property {Date} created_on
- * @property {Date} bumped_on
- * 
- */
-
 exports.ReplySchema = ReplySchema;
 exports.Reply = Reply;

@@ -10,21 +10,11 @@ const ThreadSchema = new Schema({
     reported: { type: Boolean, default: false },
     created_on: { type: Date, default: currentDate },
     bumped_on: { type: Date, default: currentDate },
-    replies: { type: [ ReplySchema ] }
+    replies: { type: [ ReplySchema ] },
+    replycount: { type: Number, default: 0 }
 });
 
 const Thread = mongoose.model("Thread", ThreadSchema);
-
-/**
- * @typedef Thread
- * @property {string} text
- * @property {string} delete_password
- * @property {boolean} reported
- * @property {Date} created_on
- * @property {Date} bumped_on
- * @property {[ Reply ]} replies
- * 
- */
 
 exports.ThreadSchema = ThreadSchema;
 exports.Thread = Thread;
