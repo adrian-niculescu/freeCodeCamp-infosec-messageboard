@@ -11,6 +11,7 @@ async function clearDataBase() {
         Thread.deleteMany().exec(),
         Board.deleteMany().exec()
    ]);
+   console.log(`Cleared the DataBase`);
 }
 
 // clearDataBase();
@@ -45,35 +46,6 @@ async function createBoard(boardName, save) {
 }
 
 /**
- * @param {Thread} thread The thread to be decorated with computed properties.
- */
- function updateComputedPropertiesForThread(thread) {
-    thread.replycount = thread.replies.length;
-}
-
-/**
- * 
- * @param {string} boardName The name of the board. 
- * @returns {Promise<Board|undefined>} A Board.
- */
-async function getBoard(boardName) {
-    const board = await findBoard(boardName);
-    if (!board) {
-        return undefined;
-    }
-    const threads = board.threads;
-    if (!threads) {
-        console.error(`Board ${boardName} has ${board.threads} threads`);
-        throw new Error('Board has no threads');
-    }
-    threads.map((thread) => {
-        /* Map to add the replycount property */
-        updateComputedPropertiesForThread(thread);
-    });
-    return board;
-}
-
-/**
  *
  * @param {string} boardName The name of the board.
  * @param {boolean} save Whether to perform DB save or not.
@@ -101,10 +73,13 @@ async function createThread(text, deletePassword, save) {
     if (save == null) {
         save = true;
     }
+    const currentDate = new Date();
     const newThread = new Thread({
         text,
         delete_password: deletePassword,
-        replies: []
+        replies: [],
+        created_on: currentDate,
+        bumped_on: currentDate
     });
     if (save) {
         return await newThread.save();
@@ -135,7 +110,6 @@ async function createThread(text, deletePassword, save) {
         throw new Error('Board has no threads');
     }
     const thread = threads.id(threadId);
-    updateComputedPropertiesForThread(thread);
     return { board, thread };
 }
 
@@ -190,7 +164,7 @@ async function addThreadInBoard(text, boardName, deletePassword) {
         return undefined;
     }
     if (thread.delete_password !== deletePassword) {
-        throw new Error("Incorrect password");
+        throw new Error("incorrect password");
     }
     thread.remove();
     await board.save();
@@ -208,9 +182,12 @@ async function addThreadInBoard(text, boardName, deletePassword) {
     if (save == null) {
         save = true;
     }
+    const currentDate = new Date();
     const newReply = new Reply({
         text,
         delete_password: deletePassword,
+        created_on: currentDate,
+        bumped_on: currentDate,
     });
     if (save) {
         return await newReply.save();
@@ -234,10 +211,8 @@ async function addThreadInBoard(text, boardName, deletePassword) {
         console.log(`Could not add reply: ${text} to boardName: ${boardName} threadId: ${threadId}`);
         return undefined;
     }
-    const currentDate = new Date();
-    thread.bumped_on = currentDate;
+    thread.bumped_on = newReply.created_on;
     thread.replies.push(newReply);
-    updateComputedPropertiesForThread(thread);
     return await board.save();
 }
 
@@ -307,15 +282,14 @@ async function reportReply(boardName, threadId, replyId) {
     if (reply.delete_password !== deletePassword) {
         throw new Error("Incorrect password");
     }
-    reply.remove();
-    updateComputedPropertiesForThread(thread);
+    /* Simulate a "soft" delete by editing the reply */
+    reply.text = '[deleted]';
     await board.save();
     return true;
 }
 
 exports.createBoard = createBoard;
 exports.findBoard = findBoard;
-exports.getBoard = getBoard;
 exports.findOrCreateBoard = findOrCreateBoard;
 
 exports.createThread = createThread;

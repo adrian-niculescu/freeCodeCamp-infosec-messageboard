@@ -1,8 +1,7 @@
 const { Board } = require('./Board.js');
 const { Thread } = require('./Thread.js');
-const { Reply } = require('./Reply.js');
-const { 
-    getBoard,
+
+const {
     addReplyMessage,
     getThreadInBoard,
     addThreadInBoard,
@@ -10,6 +9,7 @@ const {
     deleteThread,
     reportReply,
     deleteReply,
+    findBoard,
 } = require('./db-operations.js');
 
 /**
@@ -29,11 +29,45 @@ async function processNewBoardPostRequest(text, boardName, deletePassword) {
  * @returns {Promise<[Thread]|undefined>} The threads in the board.
  */
 async function processGetBoardRequest(boardName) {
-    const board = await getBoard(boardName);
-    if (board) {
-        return board.threads;
+    const threadCountLimit = 10;
+    const replyLimit = 3;
+    const board = await findBoard(boardName);
+    if (!board) {
+        return undefined;
     }
-    return undefined;
+    let { threads } = board;
+    if (!threads) {
+        console.error(`Board ${boardName} has ${board.threads} threads`);
+        throw new Error('Board has no threads');
+    }
+    /* Sort by bumped_on DESC */
+    threads.sort((thread1, thread2) => thread2.bumped_on - thread1.bumped_on);
+    /* Take only first 10 threads */ 
+    if (threads.length > threadCountLimit) {
+        threads = threads.slice(0, threadCountLimit);
+    }
+    let returnedThreads = threads.map((thread) => {
+        /* Remove properties reported and delete_password */
+        let { _id, text, created_on, bumped_on, replies } = thread;
+        replies = replies || [];
+        let returnedThread = { _id, text, created_on, bumped_on };
+        /* Add the replycount property */
+        returnedThread.replycount = replies.length;
+        let returnedReplies = replies.map((reply) => {
+            /* Remove properties reported and delete_password */
+            const { _id, text, created_on, bumped_on } = reply;
+            return { _id, text, created_on, bumped_on };
+        });
+        /* Sort by bumped_on DESC */
+        returnedReplies.sort((reply1, reply2) => reply2.bumped_on - reply1.bumped_on);
+        /* Take only first 3 replies */ 
+        if (returnedReplies.length > replyLimit) {
+            returnedReplies = returnedReplies.slice(0, replyLimit);
+        }
+        returnedThread.replies = returnedReplies;
+        return returnedThread;
+    });
+    return returnedThreads;
 }
 
 /**
@@ -78,7 +112,22 @@ async function processGetBoardRequest(boardName) {
  */
 async function processGetRepliesRequest(boardName, threadId) {
     const { thread } = await getThreadInBoard(boardName, threadId);
-    return thread;
+    if (thread) {
+        /* Remove properties reported and delete_password */
+        let { _id, text, created_on, bumped_on, replies } = thread;
+        replies = replies || [];
+        let returnedThread = { _id, text, created_on, bumped_on };
+        /* Add the replycount property */
+        returnedThread.replycount = replies.length;
+        let returnedReplies = replies.map((reply) => {
+            /* Remove properties reported, delete_password and bumped_on */
+            const { _id, text, created_on } = reply;
+            return { _id, text, created_on };
+        });
+        returnedThread.replies = returnedReplies;
+        return returnedThread;
+    }
+    return undefined;
 }
 
 /**

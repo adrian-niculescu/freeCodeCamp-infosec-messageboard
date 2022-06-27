@@ -13,23 +13,23 @@ const {
 
 module.exports = function (app) {
   
-  app.route('/api/threads/:board')
-  .post(async function(req, res) {
+  async function postBoard(req, res) {
     try {
       const { text, delete_password } = req.body;
       let board = req.body.board;
       if (!board) {
         board = req.params.board;
       }
-      console.log(`POST New thread for boardName: ${board}} text: ${text}`);
+      console.log(`POST New thread for boardName: ${board} text: ${text}`);
       const response = await processNewBoardPostRequest(text, board, delete_password);
-      res.json(response);
+      res.redirect(`/b/${board}/`);
     } catch(err) {
       console.error(`Error saving a new post: ${err}`);
       res.send('There was an error saving the new post');
     }
-  })
-  .get(async function(req, res) {
+  }
+
+  async function getBoard(req, res) {
     try {
       const boardName = req.params.board;
       console.log(`GET threads for board: ${boardName}`);
@@ -43,8 +43,9 @@ module.exports = function (app) {
       console.error(`Error retrieving board: ${err}`);
       res.send('There was an error retrieving the board');
     }
-  })
-  .put(async function(req, res) {
+  }
+
+  async function putBoard(req, res) {
     try {
       const boardName = req.params.board;
       const { report_id } = req.body;
@@ -54,13 +55,14 @@ module.exports = function (app) {
         res.sendStatus(404);
         return;
       }
-      res.send(response ? "Success!": "Failed to report the message!");
+      res.send(response ? "reported": "Failed to report the message!");
     } catch(err) {
       console.error(`Failed to report the message: ${err}`);
       res.send('Failed to report the message!');
     }
-  })
-  .delete(async function(req, res) {
+  }
+  
+  async function deleteBoard (req, res) {
     try {
       const { thread_id, delete_password } = req.body;
       const boardName = req.params.board;
@@ -70,7 +72,7 @@ module.exports = function (app) {
         res.sendStatus(404);
         return;
       }
-      res.send(response ? "Success!": "Failed to delete the message!");
+      res.send(response ? "success": "Failed to delete the message!");
     } catch(err) {
       let message;
       if (err && err.message) {
@@ -81,10 +83,22 @@ module.exports = function (app) {
       console.error(`${message}: ${err}`);
       res.send(message);
     }
-  });
+  }
+
+  app.route('/api/threads/:board')
+  .post(postBoard)
+  .get(getBoard)
+  .put(putBoard)
+  .delete(deleteBoard);
+
+  app.route('/api/threads/:board/')
+  .post(postBoard)
+  .get(getBoard)
+  .put(putBoard)
+  .delete(deleteBoard);
     
-  app.route('/api/replies/:board')
-  .post(async function(req, res) {
+
+  async function postReplies(req, res) {
     try {
       const { thread_id, text, delete_password } = req.body;
       const board = req.params.board;
@@ -94,7 +108,7 @@ module.exports = function (app) {
         res.sendStatus(404);
         return;
       }
-      res.json(response);
+      res.redirect(`/b/${board}/${thread_id}`);
     } catch(err) {
       let message;
       if (err && err.message) {
@@ -105,8 +119,9 @@ module.exports = function (app) {
       console.error(`${message}: ${err}`);
       res.send(message);
     }
-  })
-  .get(async function(req, res) {
+  }
+
+  async function getReplies(req, res) {
     try {
       const boardName = req.params.board;
       const threadId = req.query.thread_id;
@@ -121,8 +136,9 @@ module.exports = function (app) {
       console.error(`Error retrieving board: ${err}`);
       res.send('There was an error retrieving the board');
     }
-  })
-  .put(async function(req, res) {
+  }
+
+  async function putReplies(req, res) {
     try {
       const { thread_id, reply_id } = req.body;
       const boardName = req.params.board;
@@ -132,13 +148,15 @@ module.exports = function (app) {
         res.sendStatus(404);
         return;
       }
-      res.send(response ? "Success!": "Failed to report the thread!");
+      res.send(response ? "reported": "Failed to report the thread!");
     } catch(err) {
       console.error(`Error retrieving board: ${err}`);
       res.send('There was an error retrieving the board');
     }
-  })
-  .delete(async function(req, res) {
+  }
+
+
+  async function deleteReplies(req, res) {
     try {
       const { thread_id, reply_id, delete_password } = req.body;
       const boardName = req.params.board;
@@ -148,7 +166,7 @@ module.exports = function (app) {
         res.sendStatus(404);
         return;
       }
-      res.send(response ? "Success!": "Failed to delete the reply!");
+      res.send(response ? "success": "Failed to delete the reply!");
     } catch(err) {
       let message;
       if (err && err.message) {
@@ -159,5 +177,18 @@ module.exports = function (app) {
       console.error(`${message}: ${err}`);
       res.send(message);
     }
-  });
+  }
+
+  app.route('/api/replies/:board')
+  .post(postReplies)
+  .get(getReplies)
+  .put(putReplies)
+  .delete(deleteReplies);
+
+  app.route('/api/replies/:board/')
+  .post(postReplies)
+  .get(getReplies)
+  .put(putReplies)
+  .delete(deleteReplies);
+
 };
