@@ -280,7 +280,7 @@ async function reportReply(boardName, threadId, replyId) {
         return undefined;
     }
     if (reply.delete_password !== deletePassword) {
-        throw new Error("Incorrect password");
+        throw new Error("incorrect password");
     }
     /* Simulate a "soft" delete by editing the reply */
     reply.text = '[deleted]';
